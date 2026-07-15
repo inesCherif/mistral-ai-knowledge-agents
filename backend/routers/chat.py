@@ -161,14 +161,9 @@ from langchain_core.messages import HumanMessage
 async def chat(request: ChatRequest):
     start = time.time()
     
-    # Use conversation_id as thread_id for memory
-    thread_id = request.conversation_id or f"conv_{int(time.time())}"
-    config = {"configurable": {"thread_id": thread_id}}
-    
     # Run through LangGraph orchestrator
     result = app_graph.invoke(
-        {"messages": [HumanMessage(content=request.message)], "intent": "", "response": {}},
-        config=config
+        {"messages": [HumanMessage(content=request.message)], "intent": "", "response": {}}
     )
     
     res = result.get("response", {})
@@ -184,7 +179,7 @@ async def chat(request: ChatRequest):
         intent=intent,
         agent_used=agent_used,
         sources=sources,
-        conversation_id=thread_id,
+        conversation_id=request.conversation_id or f"conv_{int(time.time())}",
         response_time_ms=max(elapsed, 120),
     )
 

@@ -104,9 +104,8 @@ def build_graph():
     workflow.add_edge("contacts", END)
     workflow.add_edge("web", END)
     
-    # Add checkpointer for conversation memory
-    memory = MemorySaver()
-    app = workflow.compile(checkpointer=memory)
+    # Removing MemorySaver for now due to langgraph 0.1.9 KeyError bug
+    app = workflow.compile()
     return app
 
 # Singleton graph instance
