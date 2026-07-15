@@ -154,34 +154,29 @@ MOCK_RESPONSES = {
 }
 
 
-from agents.models_agent import run_models_agent
-from agents.site_agent import run_site_agent
-from agents.research_agent import run_research_agent
-from agents.github_agent import run_github_agent
-from agents.contact_agent import run_contact_agent
+from orchestrator import app_graph
+from langchain_core.messages import HumanMessage
 
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     start = time.time()
-    intent = detect_intent(request.message)
     
-    if intent == "models":
-        res = run_models_agent(request.message)
-    elif intent == "site":
-        res = run_site_agent(request.message)
-    elif intent == "research":
-        res = run_research_agent(request.message)
-    elif intent == "github":
-        res = run_github_agent(request.message)
-    elif intent == "contacts":
-        res = run_contact_agent(request.message)
-    else:
-        res = run_site_agent(request.message) # Fallback to site agent instead of mock
-        
-    answer = res["answer"]
-    agent_used = res["agent_used"]
-    sources = res["sources"]
-        
+    # Use conversation_id as thread_id for memory
+    thread_id = request.conversation_id or f"conv_{int(time.time())}"
+    config = {"configurable": {"thread_id": thread_id}}
+    
+    # Run through LangGraph orchestrator
+    result = app_graph.invoke(
+        {"messages": [HumanMessage(content=request.message)], "intent": "", "response": {}},
+        config=config
+    )
+    
+    res = result.get("response", {})
+    answer = res.get("answer", "I'm sorry, I couldn't process your request.")
+    agent_used = res.get("agent_used", "orchestrator")
+    sources = res.get("sources", [])
+    intent = result.get("intent", "site")
+    
     elapsed = int((time.time() - start) * 1000)
 
     return ChatResponse(
@@ -189,6 +184,7 @@ async def chat(request: ChatRequest):
         intent=intent,
         agent_used=agent_used,
         sources=sources,
-        conversation_id=request.conversation_id or f"conv_{int(time.time())}",
+        conversation_id=thread_id,
         response_time_ms=max(elapsed, 120),
     )
+
