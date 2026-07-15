@@ -10,7 +10,9 @@ def search_web(query: str):
         return []
     try:
         client = TavilyClient(api_key=settings.TAVILY_API_KEY)
-        response = client.search(query, search_depth="basic", max_results=3)
+        # Always append Mistral AI to force relevant search results
+        search_query = f"Mistral AI {query}"
+        response = client.search(search_query, search_depth="basic", max_results=3)
         return response.get("results", [])
     except Exception as e:
         print(f"Tavily search failed: {e}")
@@ -36,8 +38,11 @@ def run_web_agent(query: str):
         })
         
     if not context:
-        # If no web results, just use general knowledge
-        prompt_fallback = PromptTemplate.from_template("You are MistralBot. Answer the user's question using your general knowledge.\nQuestion: {query}\nAnswer:")
+        prompt_fallback = PromptTemplate.from_template(
+            "You are MistralBot. You ONLY answer questions about Mistral AI.\n"
+            "If the question is unrelated to Mistral AI, politely decline.\n"
+            "Question: {query}\nAnswer:"
+        )
         chain_fb = prompt_fallback | llm | StrOutputParser()
         answer = chain_fb.invoke({"query": query})
         return {
@@ -47,9 +52,10 @@ def run_web_agent(query: str):
         }
     
     prompt = PromptTemplate.from_template(
-        "You are MistralBot, an AI assistant.\n"
+        "You are MistralBot, an AI assistant dedicated ONLY to Mistral AI.\n"
         "The user's question couldn't be answered by your internal database, so we searched the web.\n"
-        "Use the following real-time web search results to answer the user's question.\n"
+        "If the user's question is completely unrelated to Mistral AI, politely decline to answer.\n"
+        "Otherwise, use the following real-time web search results to answer the user's question.\n"
         "Context:\n{context}\n\n"
         "Question: {query}\n\nAnswer:"
     )

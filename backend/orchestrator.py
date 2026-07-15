@@ -25,7 +25,7 @@ def intent_router(state: GraphState):
     - github: Questions about Mistral's open source code, repositories, stars, inference code.
     - contacts: Questions about organization, leadership, social media, discord, emails, offices.
     - site: General questions about Mistral AI or its website.
-    - web: Use this as a fallback if the question requires real-time web search, recent news, or general knowledge outside the Mistral domains.
+    - web: Use this as a fallback if the question is about Mistral AI but requires real-time web search (e.g., recent news, what new models exist today, etc), or if the question is completely unrelated to Mistral AI (so the bot can decline it).
     
     Output ONLY the category word in lowercase.
     Query: {last_message}
@@ -34,7 +34,8 @@ def intent_router(state: GraphState):
     intent = res.content.strip().lower()
     
     if intent not in ['models', 'site', 'research', 'github', 'contacts', 'web']:
-        intent = 'web' # fallback to web instead of site for unknown queries
+        intent = 'web' # fallback to web for unknown queries so it can gracefully decline or search
+
         
     return {"intent": intent}
 
