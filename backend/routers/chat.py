@@ -157,6 +157,7 @@ MOCK_RESPONSES = {
 from agents.models_agent import run_models_agent
 from agents.site_agent import run_site_agent
 from agents.research_agent import run_research_agent
+from agents.github_agent import run_github_agent
 
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -178,8 +179,13 @@ async def chat(request: ChatRequest):
         answer = res["answer"]
         agent_used = res["agent_used"]
         sources = res["sources"]
+    elif intent == "github":
+        res = run_github_agent(request.message)
+        answer = res["answer"]
+        agent_used = res["agent_used"]
+        sources = res["sources"]
     else:
-        # Fallback to mock for phases 4-5
+        # Fallback to mock for phase 5
         mock = MOCK_RESPONSES.get(intent, MOCK_RESPONSES["site"])
         answer = mock["answer"]
         agent_used = mock["agent_used"]
