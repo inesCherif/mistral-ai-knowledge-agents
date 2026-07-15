@@ -158,6 +158,7 @@ from agents.models_agent import run_models_agent
 from agents.site_agent import run_site_agent
 from agents.research_agent import run_research_agent
 from agents.github_agent import run_github_agent
+from agents.contact_agent import run_contact_agent
 
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -166,30 +167,20 @@ async def chat(request: ChatRequest):
     
     if intent == "models":
         res = run_models_agent(request.message)
-        answer = res["answer"]
-        agent_used = res["agent_used"]
-        sources = res["sources"]
     elif intent == "site":
         res = run_site_agent(request.message)
-        answer = res["answer"]
-        agent_used = res["agent_used"]
-        sources = res["sources"]
     elif intent == "research":
         res = run_research_agent(request.message)
-        answer = res["answer"]
-        agent_used = res["agent_used"]
-        sources = res["sources"]
     elif intent == "github":
         res = run_github_agent(request.message)
-        answer = res["answer"]
-        agent_used = res["agent_used"]
-        sources = res["sources"]
+    elif intent == "contacts":
+        res = run_contact_agent(request.message)
     else:
-        # Fallback to mock for phase 5
-        mock = MOCK_RESPONSES.get(intent, MOCK_RESPONSES["site"])
-        answer = mock["answer"]
-        agent_used = mock["agent_used"]
-        sources = mock["sources"]
+        res = run_site_agent(request.message) # Fallback to site agent instead of mock
+        
+    answer = res["answer"]
+    agent_used = res["agent_used"]
+    sources = res["sources"]
         
     elapsed = int((time.time() - start) * 1000)
 
