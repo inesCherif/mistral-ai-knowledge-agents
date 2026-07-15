@@ -154,18 +154,44 @@ MOCK_RESPONSES = {
 }
 
 
+from agents.models_agent import run_models_agent
+from agents.site_agent import run_site_agent
+from agents.research_agent import run_research_agent
+
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     start = time.time()
     intent = detect_intent(request.message)
-    mock = MOCK_RESPONSES[intent]
+    
+    if intent == "models":
+        res = run_models_agent(request.message)
+        answer = res["answer"]
+        agent_used = res["agent_used"]
+        sources = res["sources"]
+    elif intent == "site":
+        res = run_site_agent(request.message)
+        answer = res["answer"]
+        agent_used = res["agent_used"]
+        sources = res["sources"]
+    elif intent == "research":
+        res = run_research_agent(request.message)
+        answer = res["answer"]
+        agent_used = res["agent_used"]
+        sources = res["sources"]
+    else:
+        # Fallback to mock for phases 4-5
+        mock = MOCK_RESPONSES.get(intent, MOCK_RESPONSES["site"])
+        answer = mock["answer"]
+        agent_used = mock["agent_used"]
+        sources = mock["sources"]
+        
     elapsed = int((time.time() - start) * 1000)
 
     return ChatResponse(
-        answer=mock["answer"],
+        answer=answer,
         intent=intent,
-        agent_used=mock["agent_used"],
-        sources=mock["sources"],
+        agent_used=agent_used,
+        sources=sources,
         conversation_id=request.conversation_id or f"conv_{int(time.time())}",
         response_time_ms=max(elapsed, 120),
     )
