@@ -1,6 +1,10 @@
 from pydantic_settings import BaseSettings
 from typing import List
+from pathlib import Path
 import os
+
+# Always resolve .env relative to this file (backend/.env), not the CWD
+_ENV_PATH = Path(__file__).parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -19,7 +23,7 @@ class Settings(BaseSettings):
     GITHUB_TOKEN: str = ""
 
     class Config:
-        env_file = ".env"
+        env_file = str(_ENV_PATH)
         env_file_encoding = "utf-8"
 
 

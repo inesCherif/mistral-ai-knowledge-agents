@@ -154,24 +154,19 @@ MOCK_RESPONSES = {
 }
 
 
-from orchestrator import app_graph
-from langchain_core.messages import HumanMessage
+from orchestrator import run_orchestrator
 
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     start = time.time()
-    
-    # Run through LangGraph orchestrator
-    result = app_graph.invoke(
-        {"messages": [HumanMessage(content=request.message)], "intent": "", "response": {}}
-    )
-    
-    res = result.get("response", {})
-    answer = res.get("answer", "I'm sorry, I couldn't process your request.")
-    agent_used = res.get("agent_used", "orchestrator")
-    sources = res.get("sources", [])
+
+    result = run_orchestrator(request.message)
+
+    answer = result.get("answer", "I'm sorry, I couldn't process your request.")
+    agent_used = result.get("agent_used", "orchestrator")
+    sources = result.get("sources", [])
     intent = result.get("intent", "site")
-    
+
     elapsed = int((time.time() - start) * 1000)
 
     return ChatResponse(
@@ -182,4 +177,3 @@ async def chat(request: ChatRequest):
         conversation_id=request.conversation_id or f"conv_{int(time.time())}",
         response_time_ms=max(elapsed, 120),
     )
-
